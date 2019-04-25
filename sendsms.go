@@ -31,9 +31,11 @@ func (s *SmsOption) SendSms() error {
 		s.Content = fmt.Sprintf("验证码：【%s】，此验证码只用于登录您的账户，请勿提供给别人。", s.Code)
 	}
 
-	err := s.sendSms()
-	if err != nil {
-		return err
+	if !s.Debug {
+		err := s.sendSms()
+		if err != nil {
+			return err
+		}
 	}
 
 	// 存储到 redis 中

@@ -19,6 +19,7 @@ type SmsOption struct {
 	Code string
 	CodeLen int
 	Content string
+	Debug bool // 如果 true，就不真的调用发送接口
 }
 
 type Sms struct {
