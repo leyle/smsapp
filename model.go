@@ -8,18 +8,12 @@ var (
 
 // 发送短信的配置文件
 type SmsOption struct {
-	Phone string
 	Account string
-	Passwd string
-	Url string
-	Rclient *redis.Client
-
-	// 以下两者可以为空，如果为空时，就是内部默认的生成
-	Default bool // 是否默认发送，默认为 true
-	Code string
-	CodeLen int
-	Content string
-	Debug bool // 如果 true，就不真的调用发送接口
+	Passwd  string
+	Url     string
+	R       *redis.Client
+	Debug   bool // 如果 true，就不真的调用发送接口
+	Default bool // 是否内部生成 code 来发送
 }
 
 type Sms struct {

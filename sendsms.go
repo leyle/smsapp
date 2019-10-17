@@ -3,7 +3,6 @@ package smsapp
 import (
 	"fmt"
 	"github.com/json-iterator/go"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,41 +14,38 @@ const PhoneRedisPrefix = "SMS:PHONE:"
 var PHONE_LEN = 11
 var MAX_CODE_LEN = 6
 
-func (s *SmsOption) SendSms() error {
-	if len(s.Phone) != PHONE_LEN {
-		return errors.New("手机号长度不对")
-	}
-
-	if s.CodeLen > MAX_CODE_LEN {
-		s.CodeLen = MAX_CODE_LEN
+func (s *SmsOption) SendSms(phone, code, content string) error {
+	ok, err := CanSend(phone)
+	if !ok {
+		return err
 	}
 
 	if s.Default {
 		// 发送默认短信数据
-		s.Code = GenerateSmsCode(s.CodeLen)
-		s.Content = fmt.Sprintf("验证码：【%s】，此验证码只用于登录您的账户，请勿提供给别人。", s.Code)
+		code = GenerateSmsCode(MAX_CODE_LEN)
+		content = fmt.Sprintf("验证码：【%s】，此验证码只用于登录您的账户，请勿提供给别人。", code)
 	}
 
 	if !s.Debug {
-		err := s.sendSms()
+		err := s.sendSms(phone, content)
 		if err != nil {
 			return err
 		}
 	}
 
 	// 存储到 redis 中
-	key := PhoneRedisPrefix + s.Phone
-	s.Rclient.Set(key, s.Code, 10 * time.Minute)
+	key := PhoneRedisPrefix + phone
+	s.R.Set(key, code, 10 * time.Minute)
 	return nil
 }
 
-func (s *SmsOption) sendSms() error {
+func (s *SmsOption) sendSms(phone, content string) error {
 	v := url.Values{}
 	now := strconv.FormatInt(time.Now().Unix(), 10)
 	v.Set("account", s.Account)
 	v.Set("password", s.Passwd)
-	v.Set("mobile", s.Phone)
-	v.Set("content", s.Content)
+	v.Set("mobile", phone)
+	v.Set("content", content)
 	v.Set("time", now)
 	v.Set("format", "json")
 
@@ -65,11 +61,11 @@ func (s *SmsOption) sendSms() error {
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
 	if err != nil {
-		fmt.Println("给手机号 ", s.Phone, "发送短信失败 ", err.Error())
+		fmt.Println("给手机号 ", phone, "发送短信失败 ", err.Error())
 		return err
 	}
 
-	fmt.Println("给手机号: ", s.Phone, "发送的验证码是: ", s.Code)
+	fmt.Println("给手机号: ", phone, "发送的信息是 [%s]", content)
 
 	ret, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
