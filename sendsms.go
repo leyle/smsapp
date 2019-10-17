@@ -11,10 +11,9 @@ import (
 	"strings"
 	"time"
 )
-
-
-const PHONE_LEN = 11
-const MAX_CODE_LEN = 6
+const PhoneRedisPrefix = "SMS:PHONE:"
+var PHONE_LEN = 11
+var MAX_CODE_LEN = 6
 
 func (s *SmsOption) SendSms() error {
 	if len(s.Phone) != PHONE_LEN {
@@ -39,7 +38,8 @@ func (s *SmsOption) SendSms() error {
 	}
 
 	// 存储到 redis 中
-	s.Rclient.Set(s.Phone, s.Code, 10 * time.Minute)
+	key := PhoneRedisPrefix + s.Phone
+	s.Rclient.Set(key, s.Code, 10 * time.Minute)
 	return nil
 }
 
